@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IF / ELSE — Think Like a Computer!</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --bg-card: rgba(30,37,46,0.88);
+            --bg-card-solid: #1e252e;
+            --fg: #ecf0f5;
+            --fg-muted: #8899a6;
+            --accent: #FF6B6B;
+            --accent2: #00D68F;
+            --accent3: #FFD93D;
+            --accent4: #2EC4B6;
+            --true-color: #00D68F;
+            --false-color: #FF6B6B;
+            --radius: 18px;
+            --radius-sm: 12px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.4);
+            --glow-green: 0 0 18px rgba(0,214,143,0.35);
+            --glow-coral: 0 0 18px rgba(255,107,107,0.35);
+            --glow-amber: 0 0 18px rgba(255,217,61,0.35);
+        }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{
+            font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+            background:var(--bg);color:var(--fg);
+            overflow-x:hidden;min-height:100vh;line-height:1.6;
+        }
+        h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;line-height:1.2}
+        h2{font-size:clamp(1.4rem,3vw,2rem);font-weight:700;line-height:1.3}
+        h3{font-size:clamp(1.1rem,2.5vw,1.4rem);font-weight:600}
+        p{font-size:clamp(0.95rem,1.8vw,1.15rem)}
+
+        /* ===== BACKGROUND ===== */
+        .bg-layer{position:fixed;inset:0;z-index:0;overflow:hidden;
+            background:linear-gradient(160deg,#0f1419 0%,#131a22 40%,#0f1419 100%)}
+        .bg-blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.12}
+        .bg-blob-1{width:500px;height:500px;background:var(--accent);top:-10%;left:-5%;animation:bd1 20s ease-in-out infinite}
+        .bg-blob-2{width:400px;height:400px;background:var(--accent2);bottom:-10%;right:-5%;animation:bd2 25s ease-in-out infinite}
+        .bg-blob-3{width:300px;height:300px;background:var(--accent3);top:40%;left:50%;animation:bd3 18s ease-in-out infinite}
+        @keyframes bd1{0%,100%{transform:translate(0,0)}50%{transform:translate(80px,60px)}}
+        @keyframes bd2{0%,100%{transform:translate(0,0)}50%{transform:translate(-60px,-80px)}}
+        @keyframes bd3{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,50px)}}
+        .particles{position:fixed;inset:0;z-index:0;pointer-events:none}
+        .particle{position:absolute;border-radius:50%;opacity:0;animation:pf linear infinite}
+        @keyframes pf{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:.5}90%{opacity:.5}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+
+        /* ===== PROGRESS ===== */
+        .progress-bar{
+            position:fixed;top:0;left:0;right:0;z-index:100;
+            background:rgba(15,20,25,.95);backdrop-filter:blur(10px);
+            border-bottom:1px solid rgba(255,255,255,.06);
+            padding:10px 20px;display:flex;align-items:center;gap:8px;
+        }
+        .pdot{
+            width:10px;height:10px;border-radius:50%;flex-shrink:0;
+            background:rgba(255,255,255,.15);transition:all .4s;cursor:pointer;
+        }
+        .pdot.active{background:var(--accent3);box-shadow:0 0 8px rgba(255,217,61,.5);transform:scale(1.3)}
+        .pdot.done{background:var(--accent2)}
+        .pline{flex:1;height:2px;background:rgba(255,255,255,.1);border-radius:1px;position:relative}
+        .pline-fill{height:100%;background:var(--accent2);border-radius:1px;transition:width .6s;width:0}
+        .plabel{font-size:.75rem;color:var(--fg-muted);white-space:nowrap;min-width:80px;text-align:right}
+
+        /* ===== PAGES ===== */
+        .page{
+            position:fixed;inset:0;z-index:1;
+            overflow-y:auto;overflow-x:hidden;
+            padding:70px 20px 40px;
+            opacity:0;transform:translateX(80px);pointer-events:none;
+            transition:opacity .45s ease,transform .45s ease;
+        }
+        .page.active{opacity:1;transform:translateX(0);pointer-events:auto}
+        .page-inner{max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+        /* ===== CARDS ===== */
+        .card{
+            background:var(--bg-card);backdrop-filter:blur(12px);
+            border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);
+            padding:28px;box-shadow:var(--shadow);
+            transition:transform .3s,box-shadow .3s;
+        }
+        .card:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+        .card-coral{border-left:4px solid var(--accent)}
+        .card-green{border-left:4px solid var(--accent2)}
+        .card-amber{border-left:4px solid var(--accent3)}
+        .card-teal{border-left:4px solid var(--accent4)}
+        .scenario-card{text-align:center;padding:36px 28px;
+            background:linear-gradient(135deg,var(--bg-card),rgba(46,196,182,.08))}
+        .scenario-emoji{font-size:4rem;display:block;margin-bottom:16px}
+
+        /* ===== BUTTONS ===== */
+        .btn{
+            display:inline-flex;align-items:center;justify-content:center;gap:8px;
+            padding:14px 28px;border-radius:var(--radius-sm);
+            font-size:1rem;font-weight:600;cursor:pointer;
+            border:none;transition:all .25s;position:relative;overflow:hidden;
+        }
+        .btn:active{transform:scale(.97)}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#ff8e53);color:#fff;box-shadow:0 4px 16px rgba(255,107,107,.3)}
+        .btn-primary:hover{box-shadow:0 6px 24px rgba(255,107,107,.5);transform:translateY(-2px)}
+        .btn-green{background:linear-gradient(135deg,var(--accent2),#28a745);color:#fff;box-shadow:0 4px 16px rgba(0,214,143,.3)}
+        .btn-green:hover{box-shadow:0 6px 24px rgba(0,214,143,.5);transform:translateY(-2px)}
+        .btn-amber{background:linear-gradient(135deg,var(--accent3),#f0a500);color:#1a1a2e;box-shadow:0 4px 16px rgba(255,217,61,.3)}
+        .btn-amber:hover{box-shadow:0 6px 24px rgba(255,217,61,.5);transform:translateY(-2px)}
+        .btn-outline{background:transparent;border:2px solid rgba(255,255,255,.2);color:var(--fg)}
+        .btn-outline:hover{border-color:var(--accent3);color:var(--accent3)}
+        .choice-group{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
+        .btn-choice{
+            flex:1;min-width:180px;padding:18px 24px;
+            background:var(--bg-card);border:2px solid rgba(255,255,255,.12);
+            border-radius:var(--radius-sm);color:var(--fg);
+            font-size:1.05rem;font-weight:600;cursor:pointer;
+            transition:all .3s;text-align:center;
+        }
+        .btn-choice:hover:not(:disabled){border-color:var(--accent3);background:rgba(255,217,61,.08);transform:translateY(-3px);box-shadow:var(--glow-amber)}
+        .btn-choice:disabled{cursor:not-allowed;opacity:.4}
+        .btn-choice.sel-true{border-color:var(--true-color);background:rgba(0,214,143,.12);box-shadow:var(--glow-green);opacity:1!important}
+        .btn-choice.sel-false{border-color:var(--false-color);background:rgba(255,107,107,.12);box-shadow:var(--glow-coral);opacity:1!important}
+
+        /* ===== ROBOT ===== */
+        .robot-wrap{display:flex;flex-direction:column;align-items:center;margin:20px auto;position:relative;width:140px;height:185px}
+        .r-antenna-ball{width:14px;height:14px;background:var(--accent3);border-radius:50%;margin:0 auto;animation:ap 2s ease-in-out infinite;box-shadow:0 0 12px rgba(255,217,61,.6)}
+        .r-antenna-stick{width:3px;height:16px;background:#5a6270;margin:0 auto;border-radius:2px}
+        .r-head{width:80px;height:56px;background:linear-gradient(180deg,#3a4250,#2d3440);border-radius:14px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:18px;border:2px solid #4a5568;position:relative}
+        .r-eye{width:14px;height:14px;background:var(--accent2);border-radius:50%;box-shadow:0 0 8px rgba(0,214,143,.5);animation:rb 4s ease-in-out infinite}
+        .r-mouth{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:22px;height:6px;border-bottom:3px solid #5a6270;border-radius:0 0 8px 8px}
+        .r-neck{width:16px;height:6px;background:#4a5568;margin:0 auto;border-radius:2px}
+        .r-body{width:64px;height:48px;background:linear-gradient(180deg,#3a4250,#2d3440);border-radius:10px;margin:0 auto;border:2px solid #4a5568;position:relative;display:flex;align-items:center;justify-content:center;gap:4px}
+        .r-light{width:8px;height:8px;border-radius:50%;animation:bl 2s ease-in-out infinite}
+        .r-light-1{background:var(--accent);animation-delay:0s}
+        .r-light-2{background:var(--accent2);animation-delay:.7s}
+        .r-light-3{background:var(--accent3);animation-delay:1.4s}
+        .r-arms{position:absolute;top:10px;width:100%;display:flex;justify-content:space-between;pointer-events:none}
+        .r-arm{width:10px;height:30px;background:#4a5568;border-radius:5px}
+        .r-arm-l{transform:translateX(-14px) rotate(15deg);animation:aw 3s ease-in-out infinite}
+        .r-arm-r{transform:translateX(14px) rotate(-15deg);animation:aw 3s ease-in-out infinite .5s}
+        .r-legs{display:flex;gap:12px;justify-content:center;margin-top:2px}
+        .r-leg{width:12px;height:18px;background:#4a5568;border-radius:4px}
+        .thought-bub{position:absolute;top:-8px;right:-50px;background:rgba(255,255,255,.1);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:8px 14px;display:flex;gap:5px;align-items:center}
+        .tdot{border-radius:50%;background:var(--accent3);animation:tp 1.5s ease-in-out infinite}
+        .tdot:nth-child(1){width:7px;height:7px}
+        .tdot:nth-child(2){width:9px;height:9px;animation-delay:.3s}
+        .tdot:nth-child(3){width:11px;height:11px;animation-delay:.6s}
+        @keyframes ap{0%,100%{transform:scale(1);box-shadow:0 0 12px rgba(255,217,61,.6)}50%{transform:scale(1.3);box-shadow:0 0 20px rgba(255,217,61,.9)}}
+        @keyframes rb{0%,42%,46%,100%{transform:scaleY(1)}44%{transform:scaleY(.1)}}
+        @keyframes bl{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+        @keyframes aw{0%,100%{transform:translateX(-14px) rotate(15deg)}50%{transform:translateX(-14px) rotate(-10deg)}}
+        @keyframes tp{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+
+        /* ===== STEPS ===== */
+        .step{display:none}
+        .step.visible{display:block;animation:stepIn .5s ease forwards}
+        @keyframes stepIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+        /* ===== CONDITION BOX ===== */
+        .cond-box{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;
+            background:rgba(255,217,61,.1);border:2px solid var(--accent3);
+            border-radius:var(--radius-sm);padding:12px 20px;font-weight:700;font-size:1.1rem;margin:12px 0}
+        .cond-result{display:inline-block;padding:6px 16px;border-radius:8px;font-weight:800;font-size:1.1rem;letter-spacing:1px;animation:rpop .5s ease}
+        .cond-result.res-true{background:rgba(0,214,143,.15);color:var(--true-color);border:2px solid var(--true-color);box-shadow:var(--glow-green)}
+        .cond-result.res-false{background:rgba(255,107,107,.15);color:var(--false-color);border:2px solid var(--false-color);box-shadow:var(--glow-coral)}
+        @keyframes rpop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+        .thinking-dots{display:inline-flex;gap:6px;margin-left:8px}
+        .thinking-dots span{width:8px;height:8px;border-radius:50%;background:var(--accent3);animation:tb 1.2s ease-in-out infinite}
+        .thinking-dots span:nth-child(2){animation-delay:.2s}
+        .thinking-dots span:nth-child(3){animation-delay:.4s}
+        @keyframes tb{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-10px);opacity:1}}
+        .comp-display{font-family:'Courier New',monospace;font-size:1.3rem;font-weight:700;text-align:center;padding:16px;background:rgba(255,255,255,.04);border-radius:var(--radius-sm);margin:12px 0}
+        .comp-display .val{color:var(--accent3)}
+        .comp-display .op{color:var(--fg)}
+        .comp-display .rt{color:var(--true-color)}
+
+        /* ===== FLOWCHART ===== */
+        .fc{display:flex;flex-direction:column;align-items:center;padding:20px 10px;margin:16px auto;max-width:480px}
+        .fc-node{padding:10px 22px;border-radius:10px;text-align:center;font-weight:600;font-size:.9rem;border:2px solid rgba(255,255,255,.15);background:var(--bg-card-solid);opacity:.3;transition:all .5s;position:relative;z-index:2}
+        .fc-node.lit{opacity:1}
+        .fc-term{border-radius:25px;background:rgba(46,196,182,.1);border-color:var(--accent4);color:var(--accent4)}
+        .fc-term.lit{box-shadow:0 0 16px rgba(46,196,182,.4);background:rgba(46,196,182,.2)}
+        .fc-cond{position:relative;width:130px;height:130px;margin:8px 0}
+        .fc-dia{position:absolute;inset:0;background:rgba(255,217,61,.08);border:2px solid rgba(255,217,61,.4);transform:rotate(45deg);border-radius:10px;opacity:.3;transition:all .5s}
+        .fc-dia.lit{opacity:1;background:rgba(255,217,61,.15);border-color:var(--accent3);box-shadow:var(--glow-amber)}
+        .fc-dia.lit-g{opacity:1;background:rgba(0,214,143,.12);border-color:var(--true-color);box-shadow:var(--glow-green)}
+        .fc-dia.lit-r{opacity:1;background:rgba(255,107,107,.12);border-color:var(--false-color);box-shadow:var(--glow-coral)}
+        .fc-ctxt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--fg);z-index:3;text-align:center;padding:10px;line-height:1.3}
+        .fc-conn{width:2px;height:20px;background:rgba(255,255,255,.12);transition:background .5s,box-shadow .5s,opacity .5s}
+        .fc-conn.lit{background:var(--accent4);box-shadow:0 0 8px rgba(46,196,182,.4)}
+        .fc-conn.lit-g{background:var(--true-color);box-shadow:0 0 8px rgba(0,214,143,.5)}
+        .fc-conn.lit-r{background:var(--false-color);box-shadow:0 0 8px rgba(255,107,107,.5)}
+        .fc-conn.dim{opacity:.2}
+        .fc-branches{display:flex;gap:40px;align-items:flex-start;justify-content:center;width:100%}
+        .fc-branch{display:flex;flex-direction:column;align-items:center}
+        .fc-blabel{font-size:.78rem;font-weight:800;padding:4px 14px;border-radius:6px;letter-spacing:.5px;opacity:.3;transition:all .5s}
+        .fc-blabel.lit{opacity:1}
+        .fc-blabel.dim{opacity:.18}
+        .fc-bl-true{background:rgba(0,214,143,.15);color:var(--true-color)}
+        .fc-bl-true.lit{box-shadow:var(--glow-green)}
+        .fc-bl-false{background:rgba(255,107,107,.15);color:var(--false-color)}
+        .fc-bl-false.lit{box-shadow:var(--glow-coral)}
+        .fc-act-true{border-color:rgba(0,214,143,.3);color:var(--true-color)}
+        .fc-act-true.lit{background:rgba(0,214,143,.12);border-color:var(--true-color);box-shadow:var(--glow-green)}
+        .fc-act-false{border-color:rgba(255,107,107,.3);color:var(--false-color)}
+        .fc-act-false.lit{background:rgba(255,107,107,.12);border-color:var(--false-color);box-shadow:var(--glow-coral)}
+        .fc-node.dim{opacity:.15}
+
+        /* ===== CODE BLOCKS ===== */
+        .code-block{background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-sm);overflow:hidden;font-family:'Courier New',Consolas,monospace;font-size:.9rem;line-height:1.7}
+        .code-hdr{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.06)}
+        .cdot{width:10px;height:10px;border-radius:50%}
+        .cdot-r{background:#ff5f57}.cdot-y{background:#febc2e}.cdot-g{background:#28c840}
+        .code-ttl{margin-left:8px;font-size:.8rem;color:var(--fg-muted)}
+        .code-body{padding:16px 20px;overflow-x:auto}
+        .cl{opacity:0;transform:translateX(-10px);transition:opacity .4s,transform .4s;white-space:pre}
+        .cl.vis{opacity:1;transform:translateX(0)}
+        .kw{color:#ff7b72;font-weight:700}.str{color:#a5d6ff}.vn{color:#ffa657}.nm{color:#79c0ff}
+        .op{color:#ff7b72}.bi{color:#ffa657}.pu{color:#c9d1d9}
+
+        /* ===== ENCOURAGE ===== */
+        .encourage{display:flex;align-items:center;gap:10px;background:rgba(0,214,143,.08);border:1px solid rgba(0,214,143,.2);border-radius:var(--radius-sm);padding:14px 20px;font-weight:600;color:var(--accent2)}
+        .enc-icon{font-size:1.4rem;flex-shrink:0}
+
+        /* ===== BADGES ===== */
+        .tf-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:8px;font-weight:800;font-size:.9rem;letter-spacing:.5px}
+        .tf-true{background:rgba(0,214,143,.15);color:var(--true-color);border:1px solid rgba(0,214,143,.3)}
+        .tf-false{background:rgba(255,107,107,.15);color:var(--false-color);border:1px solid rgba(255,107,107,.3)}
+
+        /* ===== SUMMARY ===== */
+        .sum-visual{text-align:center;padding:32px 20px;background:linear-gradient(135deg,rgba(255,107,107,.06),rgba(0,214,143,.06));border-radius:var(--radius);border:1px solid rgba(255,255,255,.08)}
+        .sum-flow{display:flex;flex-direction:column;align-items:center;gap:6px;margin:24px auto;max-width:400px}
+        .sum-node{padding:12px 24px;border-radius:10px;font-weight:700;font-size:1rem;width:100%;text-align:center;animation:sp 3s ease-in-out infinite}
+        .sum-if{background:rgba(255,217,61,.12);border:2px solid var(--accent3);color:var(--accent3)}
+        .sum-t{background:rgba(0,214,143,.12);border:2px solid var(--true-color);color:var(--true-color)}
+        .sum-f{background:rgba(255,107,107,.12);border:2px solid var(--false-color);color:var(--false-color)}
+        .sum-arrow{font-size:1.2rem;color:var(--fg-muted)}
+        @keyframes sp{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+        .congrats{font-size:clamp(1.4rem,3.5vw,2.2rem);font-weight:800;text-align:center;margin-top:16px;background:linear-gradient(135deg,var(--accent3),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+        /* ===== CONFETTI ===== */
+        @keyframes cfall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+        /* ===== DIVIDER ===== */
+        .divider{display:flex;align-items:center;gap:12px;color:var(--fg-muted);font-size:.8rem;margin:8px 0}
+        .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
+
+        /* ===== HELPERS ===== */
+        .tc{text-align:center}.mt16{margin-top:16px}.hl{color:var(--accent3);font-weight:700}
+
+        /* ===== RESPONSIVE ===== */
+        @media(max-width:600px){
+            .page{padding:60px 14px 30px}
+            .card{padding:20px}
+            .choice-group{flex-direction:column}
+            .btn-choice{min-width:100%}
+            .fc-branches{gap:20px}
+            .fc-cond{width:100px;height:100px}
+            .fc-ctxt{font-size:.65rem}
+            .thought-bub{right:-30px}
+        }
+        @media(min-width:1200px){.page-inner{max-width:900px}h1{font-size:3rem}}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    </style>
+</head>
+<body>
+    <div class="bg-layer" aria-hidden="true">
+        <div class="bg-blob bg-blob-1"></div>
+        <div class="bg-blob bg-blob-2"></div>
+        <div class="bg-blob bg-blob-3"></div>
+    </div>
+    <div class="particles" id="particles" aria-hidden="true"></div>
+
+    <!-- Progress bar -->
+    <nav class="progress-bar" role="navigation" aria-label="Lesson progress">
+        <div class="pdot active" data-p="0" title="Welcome"></div>
+        <div class="pline"><div class="pline-fill" id="pf0"></div></div>
+        <div class="pdot" data-p="1" title="Rainy Day"></div>
+        <div class="pline"><div class="pline-fill" id="pf1"></div></div>
+        <div class="pdot" data-p="2" title="Jacket"></div>
+        <div class="pline"><div class="pline-fill" id="pf2"></div></div>
+        <div class="pdot" data-p="3" title="Smart Door"></div>
+        <div class="pline"><div class="pline-fill" id="pf3"></div></div>
+        <div class="pdot" data-p="4" title="Summary"></div>
+        <span class="plabel" id="plabel">Welcome</span>
+    </nav>
+
+    <!-- ==================== PAGE 0: WELCOME ==================== -->
+    <section id="pg0" class="page active" aria-label="Introduction">
+        <div class="page-inner">
+            <div class="card tc" style="padding:40px 28px">
+                <h1 style="margin-bottom:8px">Welcome, Junior Programmers!</h1>
+                <p style="color:var(--fg-muted);font-size:1.1rem;max-width:560px;margin:0 auto">
+                    Today we will discover how computers make decisions using
+                    <span class="hl">IF</span> and <span class="hl">ELSE</span> statements.
+                </p>
+            </div>
+            <div class="card tc" style="padding:32px 28px">
+                <div class="robot-wrap" style="margin:0 auto 20px">
+                    <div class="thought-bub"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>
+                    <div class="r-antenna-ball"></div><div class="r-antenna-stick"></div>
+                    <div class="r-head"><div class="r-eye"></div><div class="r-eye"></div><div class="r-mouth"></div></div>
+                    <div class="r-neck"></div>
+                    <div class="r-body">
+                        <div class="r-arms"><div class="r-arm r-arm-l"></div><div class="r-arm r-arm-r"></div></div>
+                        <div class="r-light r-light-1"></div><div class="r-light r-light-2"></div><div class="r-light r-light-3"></div>
+                    </div>
+                    <div class="r-legs"><div class="r-leg"></div><div class="r-leg"></div></div>
+                </div>
+                <p style="font-size:1.05rem">Just like humans make choices every day, computers also make choices by checking <span class="hl">conditions</span>.</p>
+            </div>
+            <div class="card card-amber">
+                <h3 style="margin-bottom:12px">What is a Condition?</h3>
+                <p style="margin-bottom:16px">A condition is a question that has only <strong>two</strong> possible answers:</p>
+                <div style="display:flex;gap:16px;flex-wrap:wrap">
+                    <div class="tf-badge tf-true" style="font-size:1.1rem;padding:10px 24px">&#10003; TRUE (Yes)</div>
+                    <div class="tf-badge tf-false" style="font-size:1.1rem;padding:10px 24px">&#10007; FALSE (No)</div>
+                </div>
+                <p style="margin-top:16px;color:var(--fg-muted)">A computer checks the condition and follows the correct path &#8212; just like you decide what to do based on what you see around you!</p>
+            </div>
+            <div class="tc">
+                <button class="btn btn-primary" onclick="goTo(1)" style="font-size:1.1rem;padding:16px 36px">Let's Begin the Adventure</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== PAGE 1: RAINY DAY ==================== -->
+    <section id="pg1" class="page" aria-label="Example 1">
+        <div class="page-inner" id="pi1">
+            <div class="step visible" id="ex1-s1">
+                <div class="card scenario-card card-teal">
+                    <span class="scenario-emoji">&#127782;&#65039;</span>
+                    <h2>Example 1: Rainy Day</h2>
+                    <p style="margin-top:8px">You are leaving your house to go to school.</p>
+                </div>
+                <div class="tc mt16"><button class="btn btn-amber" onclick="reveal('ex1',2)">Let's Think Like a Computer!</button></div>
+            </div>
+            <div class="step" id="ex1-s2">
+                <div class="card card-amber">
+                    <h3>&#129300; The Big Question</h3>
+                    <p style="margin-top:8px;font-size:1.15rem;font-weight:600">Is it raining outside?</p>
+                    <p style="color:var(--fg-muted);margin-top:4px">What do you think the computer should check? Make your prediction!</p>
+                    <div class="choice-group" id="ex1-ch">
+                        <button class="btn-choice" onclick="choose('ex1',true,this)">&#127782;&#65039; Yes, it is raining</button>
+                        <button class="btn-choice" onclick="choose('ex1',false,this)">&#9728;&#65039; No, it is not raining</button>
+                    </div>
+                </div>
+            </div>
+            <div class="step" id="ex1-s3">
+                <div class="encourage"><span class="enc-icon">&#127881;</span><span>Great prediction! Let's see how the computer makes its decision.</span></div>
+                <div class="card card-amber" style="margin-top:12px">
+                    <h3>&#128187; The Computer Checks the Condition</h3>
+                    <p style="margin-top:8px">The computer asks:</p>
+                    <div class="cond-box">
+                        <span>Is it raining?</span>
+                        <span id="ex1-td" class="thinking-dots"><span></span><span></span><span></span></span>
+                        <span class="cond-result" id="ex1-cr" style="display:none"></span>
+                    </div>
+                    <div id="ex1-expl" style="display:none;margin-top:12px"><p id="ex1-et"></p></div>
+                </div>
+            </div>
+            <div class="step" id="ex1-s4">
+                <div class="card"><h3>&#129504; The Computer's Decision</h3><p id="ex1-dt" style="margin-top:8px;font-size:1.1rem;font-weight:600"></p></div>
+                <div class="tc mt16"><button class="btn btn-outline" onclick="reveal('ex1',5)">Show Me the Flowchart</button></div>
+            </div>
+            <div class="step" id="ex1-s5">
+                <div class="divider"><span>Flowchart</span></div>
+                <div class="card">
+                    <div class="fc" id="ex1-fc">
+                        <div class="fc-node fc-term" id="ex1-fstart">START</div>
+                        <div class="fc-conn" id="ex1-fc1"></div>
+                        <div class="fc-cond"><div class="fc-dia" id="ex1-fdia"></div><div class="fc-ctxt">Is it raining?</div></div>
+                        <div style="display:flex;width:100%;justify-content:center;gap:40px"><div class="fc-conn" id="ex1-fc2t"></div><div class="fc-conn" id="ex1-fc2f"></div></div>
+                        <div class="fc-branches">
+                            <div class="fc-branch"><div class="fc-blabel fc-bl-true" id="ex1-fblt">YES (TRUE)</div><div class="fc-conn" id="ex1-fc3t"></div><div class="fc-node fc-act-true" id="ex1-fatr">Take umbrella &#127746;</div></div>
+                            <div class="fc-branch"><div class="fc-blabel fc-bl-false" id="ex1-fblf">NO (FALSE)</div><div class="fc-conn" id="ex1-fc3f"></div><div class="fc-node fc-act-false" id="ex1-fafl">Go outside &#9728;&#65039;</div></div>
+                        </div>
+                        <div style="display:flex;width:100%;justify-content:center;gap:40px"><div class="fc-conn" id="ex1-fc4t"></div><div class="fc-conn" id="ex1-fc4f"></div></div>
+                        <div class="fc-node fc-term" id="ex1-fend">END</div>
+                    </div>
+                </div>
+                <div class="tc mt16"><button class="btn btn-outline" onclick="reveal('ex1',6)">Show Me the Pseudocode</button></div>
+            </div>
+            <div class="step" id="ex1-s6">
+                <div class="divider"><span>Pseudocode</span></div>
+                <div class="code-block"><div class="code-hdr"><div class="cdot cdot-r"></div><div class="cdot cdot-y"></div><div class="cdot cdot-g"></div><span class="code-ttl">Pseudocode</span></div>
+                    <div class="code-body" id="ex1-pseudo">
+                        <div class="cl"><span class="kw">START</span></div>
+                        <div class="cl"> </div>
+                        <div class="cl"><span class="kw">IF</span> raining <span class="kw">THEN</span></div>
+                        <div class="cl">    Take umbrella</div>
+                        <div class="cl"><span class="kw">ELSE</span></div>
+                        <div class="cl">    Go outside normally</div>
+                        <div class="cl"> </div>
+                        <div class="cl"><span class="kw">END</span></div>
+                    </div>
+                </div>
+                <div class="tc mt16"><button class="btn btn-outline" onclick="reveal('ex1',7)">Show Me the Python Code</button></div>
+            </div>
+            <div class="step" id="ex1-s7">
+                <div class="divider"><span>Python Code</span></div>
+                <div class="code-block"><div class="code-hdr"><div class="cdot cdot-r"></div><div class="cdot cdot-y"></div><div class="cdot cdot-g"></div><span class="code-ttl">Python</span></div>
+                    <div class="code-body" id="ex1-py">
+                        <div class="cl"><span class="vn">raining</span> <span class="op">=</span> <span class="nm">True</span></div>
+                        <div class="cl"> </div>
+                        <div class="cl"><span class="kw">if</span> <span class="vn">raining</span><span class="pu">:</span></div>
+                        <div class="cl">    <span class="bi">print</span><span class="pu">(</span><span class="str">"Take your umbrella"</span><span class="pu">)</span></div>
+                        <div class="cl"><span class="kw">else</span><span class="pu">:</span></div>
+                        <div class="cl">    <span class="bi">print</span><span class="pu">(</span><span class="str">"Enjoy your day"</span><span class="pu">)</span></div>
+                    </div>
+                </div>
+                <div class="tc mt16"><button class="btn btn-green" onclick="goTo(2)" style="font-size:1.05rem">Next Example &#127795;</button></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== PAGE 2: JACKET ==================== -->
+    <section id="pg2" class="page" aria-label="Example 2">
+        <div class="page-inner" id="pi2">
+            <div class="step visible" id="ex2-s1">
+                <div class="card scenario-card card-coral">
+                    <span class="scenario-emoji">&#129509;</span>
+                    <h2>Example 2: Choosing a Jacket</h2>
+                    <p style="margin-top:8px">You are getting ready to go to school.</p>
+                    <p style="margin-top:8px;font-weight:700;color:var(--accent3);font-size:1.2rem">The temperature is 10&#176;C</p>
+                </div>
+                <div class="tc mt16"><button class="btn btn-amber" onclick="reveal('ex2',2)">Let's Think Like a Computer!</button></div>
+            </div>
+            <div class="step" id="ex2-s2">
+                <div class="card card-coral">
+                    <h3>&#129300; The Big Question</h3>
+                    <p style="margin-top:8px;font-size:1.15rem;font-weight:600">Should you wear a jacket?</p>
+                    <p style="color:var(--fg-muted);margin-top:4px">Think about the temperature. Make your prediction!</p>
+                    <div class="choice-group" id="ex2-ch">
+                        <button class="btn-choice" onclick="choose('ex2',true,this)">&#129509; Wear a jacket</button>
+                        <button class="btn-choice" onclick="choose('ex2',false,this)">&#128087; Wear normal clothes</button>
+                    </div>
+                </div>
+            </div>
+            <div class="step" id="ex2-s3">
+                <div class="encourage"><span class="enc-icon">&#128075;</span><span>Great thinking! Let's see how the computer decides.</span></div>
+                <div class="card card-amber" style="margin-top:12px">
+                    <h3>&#128187; The Computer Checks the Condition</h3>
+                    <p style="margin-top:8px">The computer asks:</p>
+                    <div class="cond-box">
+                        <span>Is the temperature below 15&#176;C?</span>
+                        <span id="ex2-td" class="thinking-dots"><span></span><span></span><span></span></span>
+                        <span class="cond-result" id="ex2-cr" style="display:none"></span>
+                    </div>
+                    <div class="comp-display" id="ex2-comp" style="display:none">
+                        <span class="val">10</span><span class="op"> &lt; </span><span class="val">15</span><span class="op"> &#8594; </span><span class="rt">TRUE</span>
+                    </div>
+                    <div id="ex2-expl" style="display:none;margin-top:8px"><p id="ex2-et"></p></div>
+                </div>
+            </div>
+            <div class="step" id="ex2-s4">
+                <div class="card"><h3>&#129504; The Computer's Decision</h3><p id="ex2-dt" style="margin-top:8px;font-size:1.1rem;font-weight:600"></p></div>
+                <div class="tc mt16"><button class="btn btn-outline" onclick="reveal('ex2',5)">Show Me the Flowchart</button></div>
+            </div>
+            <div class="step" id="ex2-s5">
+                <div class="divider"><span>Flowchart</span></div>
+                <div class="card">
+                    <div class="fc" id="ex2-fc">
+                        <div class="fc-node fc-term" id="ex2-fstart">START</div>
+                        <div class="fc-conn" id="ex2-fc1"></div>
+                        <div class="fc-cond"><div class="fc-dia" id="ex2-fdia"></div><div class="fc-ctxt">temp &lt; 15?</div></div>
+                        <div style="display:flex;width:100%;justify-content:center;gap:40px"><div class="fc-conn" id="ex2-fc2t"></div><div class="fc-conn" id="ex2-fc2f"></div></div>
+                        <div class="fc-branches">
+                            <div class="fc-branch"><div class="fc-blabel fc-bl-true" id="ex2-fblt">YES (TRUE)</div><div class="fc-conn" id="ex2-fc3t"></div><div class="fc-node fc-act-true" id="ex2-fatr">Wear a jacket &#129509;</div></div>
+                            <div class="fc-branch"><div class="fc-blabel fc-bl-false" id="ex2-fblf">NO (FALSE)</div><div class="fc-conn" id="ex2-fc3f"></div><div class="fc-node fc-act-false" id="ex2-fafl">Normal clothes &#128087;</div></div>
+                        </div>
+                        <div style="display:flex;width:100%;justify-content:center;gap:40px"><div class="fc-conn" id="ex2-fc4t"></div><div class="fc-conn" id="ex2-fc4f"></div></div>
+                        <div class="fc-node fc-term" id="ex2-fend">END</div>
+                    </div>
+                </div>
+                <div class="tc mt16"><button class="btn btn-outline" onclick="reveal('ex2',6)">Show Me the Pseudocode</button></div>
+            </div>
+            <div class="step" id="ex2-s6">
+                <div class="divider"><span>Pseudocode</span></div>
+                <div class="code-block"><div class="code-hdr"><div class="cdot cdot-r"></div><div class="cdot cdot-y"></div><div class="cdot cdot-g"></div><span class="code-ttl">Pseudocode</span></div>
+                    <div class="code-body" id="ex2-pseudo">
+                        <div class="cl"><span class="kw">START</span></div>
+                        <div class="cl"> </div>
+                        <div class="cl"><span class="kw">IF</span> temperature &lt; 15 <span class="kw">THEN</span></div>
+                        <div class="cl">    Wear a jacket</div>
+                        <div class="cl"><span class="kw">ELSE</span></div>
+                        <div class="cl">    Wear normal clothes</div>
+                        <div class="cl"> </div>
+                        <div class="cl"><span class="kw">END</span></div>
+                    </div>
+                </div>
+                <div class="tc mt16"><button class="btn btn-outline" onclick="reveal('ex2',7)">Show Me the Python Code</button></div>
+            </div>
+            <div class="step" id="ex2-s7">
+                <div class="divider"><span>Python Code</span></div>
+                <div class="code-block"><div class="code-hdr"><div class="cdot cdot-r"></div><div class="cdot cdot-y"></div><div class="cdot cdot-g"></div><span class="code-ttl">Python</span></div>
+                    <div class="code-body" id="ex2-py">
+                        <div class="cl"><span class="vn">temperature</span> <span class="op">=</span> <span class="nm">10</span></div>
+                        <div class="cl"> </div>
+                        <div class="cl"><span class="kw">if</span> <span class="vn">temperature</span> <span class="op">&lt;</span> <span class="nm">15</span><span class="pu">:</span></div>
+                        <div class="cl">    <span class="bi">print</span><span class="pu">(</span><span class="str">"Wear a jacket"</span><span class="pu">)</span></div>
+                        <div class="cl"><span class="kw">else</span><span class="pu">:</span></div>
+                        <div class="cl">    <span class="bi">print</span><span class="pu">(</span><span class="str">"Wear normal clothes"</span><span class="pu">)</span></div>
+                    </div>
+                </div>
+                <div class="tc mt16"><button class="btn btn-green" onclick="goTo(3)" style="font-size:1.05rem">Next Example &#128274;</button></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== PAGE 3: SMART DOOR ==================== -->
+    <section id="pg3" class="page" aria-label="Example 3">
+        <div class="page-inner" id="pi3">
+            <div class="step visible" id="ex3-s1">
+                <div class="card scenario-card card-green">
+                    <span class="scenario-emoji">&#128274;</span>
+                    <h2>Example 3: Smart School Door</h2>
+                    <p style="margin-top:8px">You scan your student ID card to enter the school.</p>
+                </div>
+                <div class="tc mt16"><button class="btn btn-amber" onclick="reveal('ex3',2)">Let's Think Like a Computer!</button></div>
+            </div>
+            <div class="step" id="ex3-s2">
+                <div class="card card-green">
+                    <h3>&#129300; The Big Question</h3>
+                    <p style="margin-top:8px;font-size:1.15rem;font-weight:600">Should the door open?</p>
+                    <p style="color:var(--fg-muted);margin-top:4px">Imagine you just scanned your ID card. What should happen? Make your prediction!</p>
+                    <div class="choice-group" id="ex3-ch">
+                        <button class="btn-choice" onclick="choose('ex3',true,this)">&#128275; Open the door</button>
+                        <button class="btn-choice" onclick="choose('ex3',false,this)">&#128274; Keep the door locked</button>
+                    </div>
+                </div>
+            </div>
+            <div class="step" id="ex3-s3">
+                <div class="encourage"><span class="enc-icon">&#127775;</span><span>Good prediction! Let's see how the computer decides.</span></div>
+                <div class="card card-amber" style="margin-top:12px">
+                    <h3>&#128187; The Computer Checks the Condition</h3>
+                    <p style="margin-top:8px">The computer asks:</p>
+                    <div class="cond-box">
+                        <span>Is the ID card valid?</span>
+                        <span id="ex3-td" class="thinking-dots"><span></span><span></span><span></span></span>
+                        <span class="cond-result" id="ex3-cr" style="display:none"></span>
+                    </div>
+                    <div id="ex3-expl" style="display:none;margin-top:12px"><p id="ex3-et"></p></div>
+                    <div style="margin-top:12px;padding:12px;background:rgba(46,196,182,.08);border-radius:10px;border:1px solid rgba(46,196,182,.2)">
+                        <p style="font-size:.9rem;color:var(--accent4)">&#128161; Many real computer systems use conditional statements to make decisions like this &#8212; from unlocking doors to logging in to websites!</p>
+                    </div>
+                </div>
+            </div>
+            <div class="step" id="ex3-s4">
+                <div class="card"><h3>&#129504; The Computer's Decision</h3><p id="ex3-dt" style="margin-top:8px;font-size:1.1rem;font-weight:600"></p></div>
+                <div class="tc mt16"><button class="btn btn-outline" onclick="reveal('ex3',5)">Show Me the Flowchart</button></div>
+            </div>
+            <div class="step" id="ex3-s5">
+                <div class="divider"><span>Flowchart</span></div>
+                <div class="card">
+                    <div class="fc" id="ex3-fc">
+                        <div class="fc-node fc-term" id="ex3-fstart">START</div>
+                        <div class="fc-conn" id="ex3-fc1"></div>
+                        <div class="fc-cond"><div class="fc-dia" id="ex3-fdia"></div><div class="fc-ctxt">Valid ID?</div></div>
+                        <div style="display:flex;width:100%;justify-content:center;gap:40px"><div class="fc-conn" id="ex3-fc2t"></div><div class="fc-conn" id="ex3-fc2f"></div></div>
+                        <div class="fc-branches">
+                            <div class="fc-branch"><div class="fc-blabel fc-bl-true" id="ex3-fblt">YES (TRUE)</div><div class="fc-conn" id="ex3-fc3t"></div><div class="fc-node fc-act-true" id="ex3-fatr">Open door &#128275;</div></div>
+                            <div class="fc-branch"><div class="fc-blabel fc-bl-false" id="ex3-fblf">NO (FALSE)</div><div class="fc-conn" id="ex3-fc3f"></div><div class="fc-node fc-act-false" id="ex3-fafl">Keep locked &#128274;</div></div>
+                        </div>
+                        <div style="display:flex;width:100%;justify-content:center;gap:40px"><div class="fc-conn" id="ex3-fc4t"></div><div class="fc-conn" id="ex3-fc4f"></div></div>
+                        <div class="fc-node fc-term" id="ex3-fend">END</div>
+                    </div>
+                </div>
+                <div class="tc mt16"><button class="btn btn-outline" onclick="reveal('ex3',6)">Show Me the Pseudocode</button></div>
+            </div>
+            <div class="step" id="ex3-s6">
+                <div class="divider"><span>Pseudocode</span></div>
+                <div class="code-block"><div class="code-hdr"><div class="cdot cdot-r"></div><div class="cdot cdot-y"></div><div class="cdot cdot-g"></div><span class="code-ttl">Pseudocode</span></div>
+                    <div class="code-body" id="ex3-pseudo">
+                        <div class="cl"><span class="kw">START</span></div>
+                        <div class="cl"> </div>
+                        <div class="cl"><span class="kw">IF</span> valid_id <span class="kw">THEN</span></div>
+                        <div class="cl">    Open the door</div>
+                        <div class="cl"><span class="kw">ELSE</span></div>
+                        <div class="cl">    Keep the door locked</div>
+                        <div class="cl"> </div>
+                        <div class="cl"><span class="kw">END</span></div>
+                    </div>
+                </div>
+                <div class="tc mt16"><button class="btn btn-outline" onclick="reveal('ex3',7)">Show Me the Python Code</button></div>
+            </div>
+            <div class="step" id="ex3-s7">
+                <div class="divider"><span>Python Code</span></div>
+                <div class="code-block"><div class="code-hdr"><div class="cdot cdot-r"></div><div class="cdot cdot-y"></div><div class="cdot cdot-g"></div><span class="code-ttl">Python</span></div>
+                    <div class="code-body" id="ex3-py">
+                        <div class="cl"><span class="vn">valid_id</span> <span class="op">=</span> <span class="nm">True</span></div>
+                        <div class="cl"> </div>
+                        <div class="cl"><span class="kw">if</span> <span class="vn">valid_id</span><span class="pu">:</span></div>
+                        <div class="cl">    <span class="bi">print</span><span class="pu">(</span><span class="str">"Door opened"</span><span class="pu">)</span></div>
+                        <div class="cl"><span class="kw">else</span><span class="pu">:</span></div>
+                        <div class="cl">    <span class="bi">print</span><span class="pu">(</span><span class="str">"Access denied"</span><span class="pu">)</span></div>
+                    </div>
+                </div>
+                <div class="tc mt16"><button class="btn btn-green" onclick="goTo(4)" style="font-size:1.05rem">See the Summary &#127942;</button></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== PAGE 4: SUMMARY ==================== -->
+    <section id="pg4" class="page" aria-label="Summary">
+        <div class="page-inner">
+            <div class="card tc" style="padding:36px 28px">
+                <h2>&#127942; Lesson Complete!</h2>
+                <p style="margin-top:12px;color:var(--fg-muted)">You have learned how computers make decisions using conditional statements.</p>
+            </div>
+            <div class="sum-visual">
+                <h3 style="margin-bottom:8px">A computer always follows this pattern:</h3>
+                <div class="sum-flow">
+                    <div class="sum-node sum-if">IF a condition is checked</div>
+                    <div class="sum-arrow">&#11015;</div>
+                    <div style="display:flex;gap:16px;width:100%">
+                        <div class="sum-node sum-t" style="flex:1">TRUE &#10003;<br>Do one action</div>
+                        <div class="sum-node sum-f" style="flex:1">FALSE &#10007;<br>Do another action</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-amber">
+                <h3 style="margin-bottom:12px">&#128209; Key Vocabulary</h3>
+                <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+                    <div style="display:flex;gap:12px;align-items:flex-start"><span class="tf-badge tf-true" style="flex-shrink:0">IF</span><span>Checks a condition. If it is TRUE, this action runs.</span></div>
+                    <div style="display:flex;gap:12px;align-items:flex-start"><span class="tf-badge tf-false" style="flex-shrink:0">ELSE</span><span>If the condition is FALSE, this action runs instead.</span></div>
+                    <div style="display:flex;gap:12px;align-items:flex-start"><span class="tf-badge" style="flex-shrink:0;background:rgba(255,217,61,.15);color:var(--accent3);border:1px solid rgba(255,217,61,.3)">Condition</span><span>A question that is either TRUE or FALSE.</span></div>
+                </div>
+            </div>
+            <div class="card card-teal">
+                <h3 style="margin-bottom:12px">&#128218; What We Learned Today</h3>
+                <div style="display:flex;flex-direction:column;gap:14px">
+                    <div style="display:flex;gap:12px;align-items:center;padding:10px;background:rgba(255,255,255,.03);border-radius:10px"><span style="font-size:1.8rem">&#127782;&#65039;</span><div><strong>Rainy Day:</strong> IF raining THEN take umbrella, ELSE go outside normally.</div></div>
+                    <div style="display:flex;gap:12px;align-items:center;padding:10px;background:rgba(255,255,255,.03);border-radius:10px"><span style="font-size:1.8rem">&#129509;</span><div><strong>Jacket:</strong> IF temperature &lt; 15 THEN wear a jacket, ELSE wear normal clothes.</div></div>
+                    <div style="display:flex;gap:12px;align-items:center;padding:10px;background:rgba(255,255,255,.03);border-radius:10px"><span style="font-size:1.8rem">&#128274;</span><div><strong>Smart Door:</strong> IF valid_id THEN open door, ELSE keep locked.</div></div>
+                </div>
+            </div>
+            <div class="card card-green tc" style="padding:36px 28px">
+                <p class="congrats">Congratulations!</p>
+                <p style="margin-top:12px;font-size:1.1rem">Today you learned how to <strong>think like a computer</strong>.</p>
+                <p style="color:var(--fg-muted);margin-top:8px">You can now understand how IF and ELSE help computers make decisions every day &#8212; from weather apps to security systems!</p>
+            </div>
+            <div class="tc"><button class="btn btn-primary" onclick="restart()" style="font-size:1.05rem">Start Again &#128260;</button></div>
+        </div>
+    </section>
+
+    <script>
+    /* ===== STATE ===== */
+    var curPage = 0;
+    var busy = false;
+    var choices = {ex1:null, ex2:null, ex3:null};
+    var labels = ['Welcome','Rainy Day','Jacket','Smart Door','Summary'];
+
+    /* ===== PARTICLES ===== */
+    (function(){
+        var c = document.getElementById('particles');
+        var cols = ['#FF6B6B','#00D68F','#FFD93D','#2EC4B6'];
+        for(var i=0;i<20;i++){
+            var p=document.createElement('div');
+            p.className='particle';
+            var s=Math.random()*5+3;
+            p.style.width=s+'px'; p.style.height=s+'px';
+            p.style.left=Math.random()*100+'%';
+            p.style.background=cols[Math.floor(Math.random()*cols.length)];
+            p.style.animationDuration=(Math.random()*15+10)+'s';
+            p.style.animationDelay=(Math.random()*10)+'s';
+            c.appendChild(p);
+        }
+    })();
+
+    /* ===== PROGRESS ===== */
+    function updProg(){
+        var dots=document.querySelectorAll('.pdot');
+        dots.forEach(function(d,i){
+            d.classList.remove('active','done');
+            if(i<curPage) d.classList.add('done');
+            if(i===curPage) d.classList.add('active');
+        });
+        for(var i=0;i<4;i++){
+            var f=document.getElementById('pf'+i);
+            if(f) f.style.width=(i<curPage)?'100%':'0';
+        }
+        var lb=document.getElementById('plabel');
+        if(lb) lb.textContent=labels[curPage]||'';
+    }
+
+    /* ===== NAVIGATION ===== */
+    function goTo(idx){
+        if(busy||idx===curPage) return;
+        busy=true;
+        var oldP=document.getElementById('pg'+curPage);
+        var newP=document.getElementById('pg'+idx);
+        /* Slide old page out */
+        if(oldP){
+            oldP.style.transition='opacity .35s ease, transform .35s ease';
+            oldP.style.opacity='0';
+            oldP.style.transform=idx>curPage?'translateX(-80px)':'translateX(80px)';
+            oldP.style.pointerEvents='none';
+        }
+        /* Prepare new page off-screen */
+        newP.style.transition='none';
+        newP.style.opacity='0';
+        newP.style.transform=idx>curPage?'translateX(80px)':'translateX(-80px)';
+        newP.style.pointerEvents='none';
+        /* Force reflow */
+        void newP.offsetWidth;
+        /* Animate new page in */
+        newP.style.transition='opacity .4s ease, transform .4s ease';
+        newP.style.opacity='1';
+        newP.style.transform='translateX(0)';
+        newP.style.pointerEvents='auto';
+        newP.scrollTop=0;
+
+        curPage=idx;
+        updProg();
+        setTimeout(function(){
+            if(oldP){oldP.classList.remove('active');}
+            newP.classList.add('active');
+            busy=false;
+            if(idx===4) confetti();
+        },420);
+    }
+
+    /* ===== STEP REVEAL ===== */
+    function reveal(prefix,num){
+        var el=document.getElementById(prefix+'-s'+num);
+        if(!el) return;
+        el.classList.add('visible');
+        setTimeout(function(){
+            el.scrollIntoView({behavior:'smooth',block:'center'});
+        },120);
+        if(num===6) animCode(prefix+'-pseudo');
+        if(num===7) animCode(prefix+'-py');
+        if(num===5) setTimeout(function(){animFC(prefix,choices[prefix]);},400);
+    }
+
+    /* ===== CHOICE HANDLING ===== */
+    function choose(prefix,val,btn){
+        if(choices[prefix]!==null) return;
+        choices[prefix]=val;
+        /* Style buttons */
+        var grp=document.getElementById(prefix+'-ch');
+        var btns=grp.querySelectorAll('.btn-choice');
+        btns.forEach(function(b){
+            b.disabled=true;
+            if(b===btn) b.classList.add(val?'sel-true':'sel-false');
+        });
+        /* Show step 3 */
+        reveal(prefix,3);
+        /* After thinking delay, show result */
+        setTimeout(function(){
+            var td=document.getElementById(prefix+'-td');
+            var cr=document.getElementById(prefix+'-cr');
+            var expl=document.getElementById(prefix+'-expl');
+            var et=document.getElementById(prefix+'-et');
+            var comp=document.getElementById(prefix+'-comp');
+            td.style.display='none';
+            cr.style.display='inline-block';
+            if(val){
+                cr.className='cond-result res-true';
+                cr.textContent='TRUE';
+            } else {
+                cr.className='cond-result res-false';
+                cr.textContent='FALSE';
+            }
+            if(prefix==='ex2'&&comp) comp.style.display='block';
+            expl.style.display='block';
+            var msgs={
+                ex1:{t:'Because it IS raining (TRUE), the computer decides you should take an umbrella.',f:'Because it is NOT raining (FALSE), the computer decides you can go outside normally.'},
+                ex2:{t:'Because 10\u00B0C is below 15\u00B0C (TRUE), the computer decides you should wear a jacket.',f:'Actually, 10\u00B0C IS below 15\u00B0C, so the condition is TRUE! The computer would still choose the jacket. But good thinking about what happens on the ELSE side!'},
+                ex3:{t:'Because the ID card IS valid (TRUE), the computer decides to open the door.',f:'The ID card IS valid (TRUE), so the computer would actually open the door. But great thinking about what would happen if it were FALSE!'}
+            };
+            et.textContent=val?msgs[prefix].t:msgs[prefix].f;
+            /* After a pause, reveal decision */
+            setTimeout(function(){
+                var dt=document.getElementById(prefix+'-dt');
+                var dec={
+                    ex1:{t:'The computer chose: Take an umbrella! \u2602\uFE0F Since the condition is TRUE, it follows the IF path.',f:'The computer chose: Go outside normally! \u2600\uFE0F Since the condition is FALSE, it follows the ELSE path.'},
+                    ex2:{t:'The computer chose: Wear a jacket! \uD83E\uDDE5 Since 10 < 15 is TRUE, it follows the IF path.',f:'The computer chose: Wear a jacket! \uD83E\uDDE5 Even though you picked differently, 10 < 15 is TRUE, so the IF path runs.'},
+                    ex3:{t:'The computer chose: Open the door! \uD83D\uDD13 Since the ID is valid (TRUE), it follows the IF path.',f:'The computer chose: Open the door! \uD83D\uDD13 Since the ID is valid (TRUE), the IF path runs. If it were invalid, only THEN would ELSE run.'}
+                };
+                dt.textContent=val?dec[prefix].t:dec[prefix].f;
+                reveal(prefix,4);
+            },800);
+        },1600);
+    }
+
+    /* ===== FLOWCHART ANIMATION ===== */
+    function animFC(prefix,isTrue){
+        var ids=[
+            prefix+'-fstart', prefix+'-fc1', prefix+'-fdia',
+            prefix+'-fc2t', prefix+'-fblt', prefix+'-fc3t', prefix+'-fatr', prefix+'-fc4t',
+            prefix+'-fc2f', prefix+'-fblf', prefix+'-fc3f', prefix+'-fafl', prefix+'-fc4f',
+            prefix+'-fend'
+        ];
+        /* Reset all */
+        ids.forEach(function(id){
+            var el=document.getElementById(id);
+            if(el){el.classList.remove('lit','lit-g','lit-r','dim');}
+        });
+        /* Animation sequence */
+        var seq=[
+            {id:prefix+'-fstart',cls:'lit',d:0},
+            {id:prefix+'-fc1',cls:'lit',d:300},
+            {id:prefix+'-fdia',cls:isTrue?'lit-g':'lit-r',d:600},
+        ];
+        /* TRUE branch */
+        var tBranch=[
+            {id:prefix+'-fc2t',cls:isTrue?'lit-g':'lit',d:1000},
+            {id:prefix+'-fblt',cls:'lit',d:1200},
+            {id:prefix+'-fc3t',cls:isTrue?'lit-g':'lit',d:1400},
+            {id:prefix+'-fatr',cls:'lit',d:1600},
+            {id:prefix+'-fc4t',cls:isTrue?'lit-g':'lit',d:1800},
+        ];
+        /* FALSE branch */
+        var fBranch=[
+            {id:prefix+'-fc2f',cls:!isTrue?'lit-r':'lit',d:1000},
+            {id:prefix+'-fblf',cls:'lit',d:1200},
+            {id:prefix+'-fc3f',cls:!isTrue?'lit-r':'lit',d:1400},
+            {id:prefix+'-fafl',cls:'lit',d:1600},
+            {id:prefix+'-fc4f',cls:!isTrue?'lit-r':'lit',d:1800},
+        ];
+        var endN=[{id:prefix+'-fend',cls:'lit',d:2100}];
+        var all=seq.concat(tBranch).concat(fBranch).concat(endN);
+        all.forEach(function(item){
+            setTimeout(function(){
+                var el=document.getElementById(item.id);
+                if(el) el.classList.add(item.cls);
+            },item.d);
+        });
+        /* Dim the non-chosen path after animation */
+        var dimIds,keepIds;
+        if(isTrue){
+            keepIds=[prefix+'-fc2t',prefix+'-fblt',prefix+'-fc3t',prefix+'-fatr',prefix+'-fc4t'];
+            dimIds=[prefix+'-fc2f',prefix+'-fblf',prefix+'-fc3f',prefix+'-fafl',prefix+'-fc4f'];
+        } else {
+            keepIds=[prefix+'-fc2f',prefix+'-fblf',prefix+'-fc3f',prefix+'-fafl',prefix+'-fc4f'];
+            dimIds=[prefix+'-fc2t',prefix+'-fblt',prefix+'-fc3t',prefix+'-fatr',prefix+'-fc4t'];
+        }
+        setTimeout(function(){
+            dimIds.forEach(function(id){
+                var el=document.getElementById(id);
+                if(el) el.classList.add('dim');
+            });
+        },2400);
+    }
+
+    /* ===== CODE LINE ANIMATION ===== */
+    function animCode(blockId){
+        var block=document.getElementById(blockId);
+        if(!block) return;
+        var lines=block.querySelectorAll('.cl');
+        lines.forEach(function(line,i){
+            setTimeout(function(){line.classList.add('vis');},i*160);
+        });
+    }
+
+    /* ===== CONFETTI ===== */
+    function confetti(){
+        var cols=['#FF6B6B','#00D68F','#FFD93D','#2EC4B6','#ffa657','#a5d6ff'];
+        for(var i=0;i<60;i++){
+            (function(idx){
+                setTimeout(function(){
+                    var p=document.createElement('div');
+                    p.style.cssText='position:fixed;top:-20px;z-index:200;pointer-events:none;';
+                    var sz=Math.random()*8+5;
+                    var isRect=Math.random()>.5;
+                    p.style.width=sz+'px';
+                    p.style.height=(isRect?sz*.6:sz)+'px';
+                    p.style.background=cols[Math.floor(Math.random()*cols.length)];
+                    p.style.borderRadius=isRect?'2px':'50%';
+                    p.style.left=Math.random()*100+'%';
+                    var dur=Math.random()*2+2;
+                    p.style.animation='cfall '+dur+'s ease-out forwards';
+                    document.body.appendChild(p);
+                    setTimeout(function(){if(p.parentNode)p.parentNode.removeChild(p);},(dur*1000)+100);
+                },idx*40);
+            })(i);
+        }
+    }
+
+    /* ===== RESTART ===== */
+    function restart(){
+        choices={ex1:null,ex2:null,ex3:null};
+        /* Hide all steps except step 1 */
+        ['ex1','ex2','ex3'].forEach(function(px){
+            for(var s=2;s<=7;s++){
+                var el=document.getElementById(px+'-s'+s);
+                if(el) el.classList.remove('visible');
+            }
+            /* Reset choice buttons */
+            var grp=document.getElementById(px+'-ch');
+            if(grp){
+                var btns=grp.querySelectorAll('.btn-choice');
+                btns.forEach(function(b){
+                    b.disabled=false;
+                    b.classList.remove('sel-true','sel-false');
+                });
+            }
+            /* Reset thinking/result */
+            var td=document.getElementById(px+'-td');
+            var cr=document.getElementById(px+'-cr');
+            var expl=document.getElementById(px+'-expl');
+            var comp=document.getElementById(px+'-comp');
+            if(td) td.style.display='';
+            if(cr){cr.style.display='none';cr.className='cond-result';cr.textContent='';}
+            if(expl) expl.style.display='none';
+            if(comp) comp.style.display='none';
+            /* Reset code lines */
+            ['pseudo','py'].forEach(function(type){
+                var block=document.getElementById(px+'-'+type);
+                if(block){
+                    block.querySelectorAll('.cl').forEach(function(l){l.classList.remove('vis');});
+                }
+            });
+            /* Reset flowchart */
+            var fcIds=[
+                px+'-fstart',px+'-fc1',px+'-fdia',
+                px+'-fc2t',px+'-fblt',px+'-fc3t',px+'-fatr',px+'-fc4t',
+                px+'-fc2f',px+'-fblf',px+'-fc3f',px+'-fafl',px+'-fc4f',
+                px+'-fend'
+            ];
+            fcIds.forEach(function(id){
+                var el=document.getElementById(id);
+                if(el) el.classList.remove('lit','lit-g','lit-r','dim');
+            });
+        });
+        goTo(0);
+    }
+
+    /* ===== PROGRESS DOT CLICKS ===== */
+    document.querySelectorAll('.pdot').forEach(function(d){
+        d.style.cursor='pointer';
+        d.addEventListener('click',function(){
+            var t=parseInt(this.getAttribute('data-p'));
+            if(!isNaN(t)) goTo(t);
+        });
+    });
+
+    /* ===== KEYBOARD NAV ===== */
+    document.addEventListener('keydown',function(e){
+        if(e.key==='ArrowRight'||e.key==='PageDown'){
+            if(curPage<4) goTo(curPage+1);
+        }
+        if(e.key==='ArrowLeft'||e.key==='PageUp'){
+            if(curPage>0) goTo(curPage-1);
+        }
+    });
+
+    /* ===== INIT ===== */
+    updProg();
+    </script>
+</body>
+</html>
